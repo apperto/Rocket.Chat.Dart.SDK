@@ -49,4 +49,25 @@ abstract class _ClientUsersMixin implements _ClientWrapper {
     }).catchError((error) => completer.completeError(error));
     return completer.future;
   }
+  
+  // delete push token when user logout
+  Future<bool> deletePushToken(String token) async {
+    http.Request rq = http.Request('DELETE', Uri.parse('${_getUrl()}/push.token'))
+      ..headers.addAll({
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-User-Id': _auth._id,
+        'X-Auth-Token': _auth._token,
+      });
+    rq.bodyFields = {
+      'token': token,
+    };
+
+    http.StreamedResponse response = await http.Client().send(rq);
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
 }
