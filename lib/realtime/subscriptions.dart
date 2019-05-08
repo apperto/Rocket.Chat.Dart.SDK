@@ -20,10 +20,11 @@ abstract class _ClientSubscriptionsMixin implements _DdpClientWrapper {
 
   Future<void> unSubRoomMessages(String subId) {
     Completer<void> completer = Completer();
-    this._getDdpClient()
-      .unSub(subId)
-      .then((call) => completer.complete(call))
-      .catchError((error) => completer.completeError(error));
+    this
+        ._getDdpClient()
+        .unSub(subId)
+        .then((call) => completer.complete(call))
+        .catchError((error) => completer.completeError(error));
     return completer.future;
   }
 

@@ -21,13 +21,20 @@ abstract class _ClientChannelsMixin implements _DdpClientWrapper {
     return completer.future;
   }
 
-  Future<List<Channel>> getChannelsIn() {
-    Completer<List<Channel>> completer = Completer();
+  // getRooms gets all updates made to rooms since the lastUpdate. It returns a list of lists of channels.
+  // It must always return a list of 2 lists. The first list contains the updates and the second the removes
+  Future<List<List<Channel>>> getRooms({DateTime lastUpdate}) {
+    var timestamp = "";
+    if (lastUpdate != null) {
+      timestamp = lastUpdate.toIso8601String();
+    }
+    print(timestamp);
+    Completer<List<List<Channel>>> completer = Completer();
     this._getDdpClient().call('rooms/get', [
-      <String, dynamic>{"\$date": 0}
+      <String, dynamic>{"\$date": timestamp}
     ]).then((call) {
-      List<Channel> channels = [];
-      (call.reply['update'] as List<dynamic>).forEach((chan) => channels.add(
+      List<Channel> updates = [];
+      (call.reply['update'] as List<dynamic>).forEach((chan) => updates.add(
           Channel()
             ..id = '${chan['_id']}'
             ..name = '${chan['name']}'
@@ -35,15 +42,31 @@ abstract class _ClientChannelsMixin implements _DdpClientWrapper {
             ..lastMessage = chan['lastMessage'] == null
                 ? null
                 : Message.fromJson(chan['lastMessage'])));
-      completer.complete(channels);
+
+      List<Channel> removes = [];
+
+      (call.reply['remove'] as List<dynamic>).forEach((chan) => removes.add(
+          Channel()
+            ..id = '${chan['_id']}'
+            ..name = '${chan['name']}'
+            ..type = '${chan['t']}'
+            ..lastMessage = chan['lastMessage'] == null
+                ? null
+                : Message.fromJson(chan['lastMessage'])));
+      completer.complete([updates, removes]);
     }).catchError((error) => completer.completeError(error));
     return completer.future;
   }
 
-  Future<List<ChannelSubscription>> getChannelSubscriptions() {
+  Future<List<ChannelSubscription>> getChannelSubscriptions(
+      {DateTime lastUpdate}) {
+    var timestamp = "";
+    if (lastUpdate != null) {
+      timestamp = lastUpdate.toIso8601String();
+    }
     Completer<List<ChannelSubscription>> completer = Completer();
     this._getDdpClient().call('subscriptions/get', [
-      <String, dynamic>{'\$date': 0}
+      <String, dynamic>{'\$date': timestamp}
     ]).then((call) {
       List<ChannelSubscription> subscriptions = [];
       (call.reply['update'] as List<dynamic>).forEach((s) => subscriptions.add(
